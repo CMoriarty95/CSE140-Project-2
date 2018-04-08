@@ -80,13 +80,27 @@ void init_lru(int assoc_index, int block_index)
 */
 void accessMemory(address addr, word* data, WriteEnable we)
 {
-  /* Declare variables here */
-
+  
   /* handle the case of no cache at all - leave this in */
   if(assoc == 0) {
     accessDRAM(addr, (byte*)data, WORD_SIZE, we);
     return;
   }
+
+  /* Declare variables here */
+  //printf("Replacement Policy: %d\n", (int)policy);
+  int offsetBits = uint_log2(block_size);
+  int indexBits = uint_log2(set_count);
+  int tagBits = 32 - offsetBits - indexBits;
+
+  unsigned int offset = addr << (tagBits + indexBits);
+  offset = offset >> (tagBits + indexBits);
+
+  unsigned int index = addr << (tagBits);
+  index = index >> (tagBits + offsetBits);
+
+  unsigned int tag = addr >> (offsetBits + indexBits);
+
 
   /*
   You need to read/write between memory (via the accessDRAM() function) and
