@@ -10,7 +10,7 @@ unsigned int uint_log2(word w);
 int randomint(int x);
 
 int findLRU(int index);
-void fetchBlock(word* data, int index, int block, int offset)
+void fetchBlock(word* data, int index, int block, int offset);
 void replaceDirty(int dirtyBlock, int index, int indexBits, int offsetBits);
 void getDRAMBlock(address addr, word* data, WriteEnable we);
 
@@ -147,14 +147,14 @@ void accessMemory(address addr, word* data, WriteEnable we)
 		if (foundData)
 		{
 
-			fetchBlock(*data, index, block, offset);
+			fetchBlock(data, index, block, offset);
 
 		}
 
 		else
 		{
 
-			getDRAMBlock(addr, *data, we);
+			getDRAMBlock(addr, data, we);
 
 			if (policy == LRU) 
 			{
@@ -213,7 +213,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 				cache[index].block[randomBlock].lru.value = 0;
 			}
 
-			fetchBlock(*data, index, block, offset);
+			fetchBlock(data, index, block, offset);
 
 		}
 
@@ -222,18 +222,17 @@ void accessMemory(address addr, word* data, WriteEnable we)
 	else
 	{
 		
-		if (mem_sync_policy == WRITE_BACK)
+		if (memory_sync_policy == WRITE_BACK)
 		{
 			
-			if (cache[index].block[LRUBlock].dirty == DIRTY)
+			int replaceBlock;
+			if (policy == LRU)
+				replaceBlock = findLRU(index);
+			else replaceBlock = randomint(assoc);
+
+			if (cache[index].block[replaceBlock].dirty == DIRTY)
 			{
-				int replaceBlock;
-				if (policy == LRU)
-					replaceBlock = findLRU(index);
-				else replaceBlock = randomint(assoc);
-
 				replaceDirty(replaceBlock, index, indexBits, offsetBits);
-
 			}
 			memcpy((void *)cache[index].block[replaceBlock].data, (void *)data, block_size);
 
@@ -298,7 +297,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 
 int findLRU(int index)
 {
-	int maxValue = 0, LRUlock = 0;
+	int maxValue = 0, LRUBlock = 0;
 
 	for (int i = 0; i < assoc; i++)
 	{
