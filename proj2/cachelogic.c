@@ -163,8 +163,14 @@ void accessMemory(address addr, word* data, WriteEnable we)
 				memcpy((void *)cache[index].block[LRUBlock].data, (void *)data, block_size);
 				
 				//reset block data
+
+				if (memory_sync_policy == WRITE_BACK)
+				{
+					cache[index].block[LRUBlock].dirty = DIRTY;
+				}
+				else cache[index].block[LRUBlock].dirty = VIRGIN;
+
 				cache[index].block[LRUBlock].valid = VALID;
-				cache[index].block[LRUBlock].dirty = VIRGIN;
 				cache[index].block[LRUBlock].tag = tag;
 				cache[index].block[LRUBlock].accessCount = 0;
 				cache[index].block[LRUBlock].lru.value = 0;
@@ -187,8 +193,14 @@ void accessMemory(address addr, word* data, WriteEnable we)
 				memcpy((void *)cache[index].block[randomBlock].data, (void *)data, block_size);
 
 				//reset block data
+
+				if (memory_sync_policy == WRITE_BACK)
+				{
+					cache[index].block[randomBlock].dirty = DIRTY;
+				}
+				else cache[index].block[randomBlock].dirty = VIRGIN;
+
 				cache[index].block[randomBlock].valid = VALID;
-				cache[index].block[randomBlock].dirty = VIRGIN;
 				cache[index].block[randomBlock].tag = tag;
 				cache[index].block[randomBlock].accessCount = 0;
 				cache[index].block[randomBlock].lru.value = 0;
@@ -203,7 +215,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 	else
 	{
 		
-		if (MemorySyncPolicy == WRITE_BACK)
+		if (mem_sync_policy == WRITE_BACK)
 		{
 			
 			if (cache[index].block[LRUBlock].dirty == DIRTY)
@@ -217,6 +229,14 @@ void accessMemory(address addr, word* data, WriteEnable we)
 
 			}
 			memcpy((void *)cache[index].block[replaceBlock].data, (void *)data, block_size);
+
+			
+			//reset block data
+			cache[index].block[replaceBlock].valid = VALID;
+			cache[index].block[replaceBlock].dirty = DIRTY;
+			cache[index].block[replaceBlock].tag = tag;
+			cache[index].block[replaceBlock].accessCount = 0;
+			cache[index].block[replaceBlock].lru.value = 0;
 			
 		}
 
@@ -230,6 +250,13 @@ void accessMemory(address addr, word* data, WriteEnable we)
 			memcpy((void *)cache[index].block[replaceBlock].data, (void *)data, block_size);
 
 			getDRAMBlock(addr, data, WRITE);
+
+			//reset block data
+			cache[index].block[replaceBlock].valid = VALID;
+			cache[index].block[replaceBlock].dirty = VIRGIN;
+			cache[index].block[replaceBlock].tag = tag;
+			cache[index].block[replaceBlock].accessCount = 0;
+			cache[index].block[replaceBlock].lru.value = 0;
 		}
 	}
 
