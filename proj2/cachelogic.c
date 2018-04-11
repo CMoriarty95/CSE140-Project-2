@@ -180,7 +180,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 				cache[index].block[LRUBlock].valid = VALID;
 				cache[index].block[LRUBlock].tag = tag;
 				cache[index].block[LRUBlock].accessCount = 0;
-				cache[index].block[LRUBlock].lru.value = 0;
+				cache[index].block[LRUBlock].lru.value = 1;
 
 
 			}
@@ -210,7 +210,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 				cache[index].block[randomBlock].valid = VALID;
 				cache[index].block[randomBlock].tag = tag;
 				cache[index].block[randomBlock].accessCount = 0;
-				cache[index].block[randomBlock].lru.value = 0;
+				cache[index].block[randomBlock].lru.value = 1;
 			}
 
 			fetchBlock(data, index, block, offset);
@@ -242,7 +242,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 			cache[index].block[replaceBlock].dirty = DIRTY;
 			cache[index].block[replaceBlock].tag = tag;
 			cache[index].block[replaceBlock].accessCount = 0;
-			cache[index].block[replaceBlock].lru.value = 0;
+			cache[index].block[replaceBlock].lru.value = 1;
 			
 		}
 
@@ -262,7 +262,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 			cache[index].block[replaceBlock].dirty = VIRGIN;
 			cache[index].block[replaceBlock].tag = tag;
 			cache[index].block[replaceBlock].accessCount = 0;
-			cache[index].block[replaceBlock].lru.value = 0;
+			cache[index].block[replaceBlock].lru.value = 1;
 		}
 	}
 
@@ -320,12 +320,12 @@ void fetchBlock(word* data, int index, int block, int offset)
 
 	for (int i = 0; i < assoc; i++)
 	{
-		if(cache[index].block[i].value == VALID)
+		if(cache[index].block[i].valid == VALID)
 			cache[index].block[i].lru.value++;
 
 	}
 
-	cache[index].block[block].lru.value = 0;
+	cache[index].block[block].lru.value = 1;
 
 }
 
