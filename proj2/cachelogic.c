@@ -133,7 +133,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 	{
 		if (tag == cache[index].block[i].tag && cache[index].block[i].valid == 1)
 		{
-			printf("Block found at Index %d, Block %d", index, i);
+			printf("Block found at Index %d, Block %d\n", index, i);
 			block = i;
 			foundData = true;
 			break;
@@ -316,12 +316,12 @@ int findLRU(int index)
 void fetchBlock(word* data, int index, int block, int offset)
 {
 
-	memcpy((void*)data, (void*)cache[index].block[block].data[offset], 4);
+	memcpy((void*)data, (void*)cache[index].block[block].data + offset, block_size);
 
 	for (int i = 0; i < assoc; i++)
 	{
-
-		cache[index].block[i].lru.value++;
+		if(cache[index].block[i].value == VALID)
+			cache[index].block[i].lru.value++;
 
 	}
 
@@ -343,7 +343,7 @@ void replaceDirty(int dirtyBlock, int index, int indexBits, int offsetBits)
 
 	dirty = dirtyTag + dirtyIndex;
 
-	getDRAMBlock(dirty, (byte *)cache[index].block[dirtyBlock].data, block_size, WRITE);
+	getDRAMBlock(dirty, (word *)cache[index].block[dirtyBlock].data, WRITE);
 
 }
 
