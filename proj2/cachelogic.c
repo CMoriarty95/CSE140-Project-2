@@ -1,4 +1,5 @@
 #include "tips.h"
+#include <stdbool.h>
 
 /* The following two functions are defined in util.c */
 
@@ -7,6 +8,12 @@ unsigned int uint_log2(word w);
 
 /* return random int from 0..x-1 */
 int randomint(int x);
+
+int findLRU(int index);
+void fetchBlock(word* data, int index, int block, int offset)
+void replaceDirty(int dirtyBlock, int index, int indexBits, int offsetBits);
+void getDRAMBlock(address addr, word* data, WriteEnable we);
+
 
 /*
   This function allows the lfu information to be displayed
