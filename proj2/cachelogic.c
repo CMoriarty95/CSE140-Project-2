@@ -117,24 +117,99 @@ void accessMemory(address addr, word* data, WriteEnable we)
 
 	unsigned int tag = addr >> (offsetBits + indexBits);
 
+	int block = 0;
+
 	//Checking for write mode
 	bool foundData = false;
+
+	for (int i = 0; i < assoc; i++)
+	{
+		if (tag == cache[index].block[i].tag && cache[index].block[i].valid == 1)
+		{
+			printf("Block found at Index %d, Block %d", index, i);
+			block = i;
+			foundData = true;
+			break;
+		}
+	}
+
 	if (we == READ)
 	{
 		//go to the proper cache location and check if data is in cache 
-		for (int i = 0; i < assoc; i++)
+		
+		if (foundData)
 		{
-			if (tag == cache[index].block[i].tag && cache[index].block[i].valid == 1)
-			{
-				printf("Block found at Index %d, Block %d", index, i);
-				memcpy((void*) data, (void*) cache[index].block[i].data[offset], 4);
-				foundData = true;
-				break;
-			}
+
+			fetchBlock(*data, index, block, offset);
+
 		}
 
+		else
+		{
+
+			getDRAMBlock(addr, *data, we);
+
+			if (policy == LRU) 
+			{
+				int maxValue = 0, LRUBlock = 0;
+
+				for (int i = 0; i < assoc; i++)
+				{
+
+					if (cache[index].block[i].lru.value > maxValue)
+					{
+
+						maxValue = cache[index].block[i].lru.value;
+						LRUBlock = i;
+
+					}
+					
+				}
+
+				if (cache[index].block[LRUBlock].dirty == DIRTY)
+				{
+
+					replaceDirty(LRUBlock, index, indexBits, offsetBits);
+
+				}
+				
+				memcpy((void *)cache[index].block[LRUBlock].data, (void *)data, block_size);
+				
+				//reset block data
+				cache[index].block[LRUBlock].valid = VALID;
+				cache[index].block[LRUBlock].dirty = VIRGIN;
+				cache[index].block[LRUBlock].tag = tag;
+				cache[index].block[LRUBlock].accessCount = 0;
+				cache[index].block[LRUBlock].lru.value = 0;
 
 
+			}
+
+			else
+			{
+
+				int randomBlock = randomint(assoc);
+
+				if (cache[index].block[randomBlock].dirty == DIRTY)
+				{
+
+					replaceDirty(randomBlock, index, indexBits, offsetBits);
+
+				}
+
+				memcpy((void *)cache[index].block[randomBlock].data, (void *)data, block_size);
+
+				//reset block data
+				cache[index].block[randomBlock].valid = VALID;
+				cache[index].block[randomBlock].dirty = VIRGIN;
+				cache[index].block[randomBlock].tag = tag;
+				cache[index].block[randomBlock].accessCount = 0;
+				cache[index].block[randomBlock].lru.value = 0;
+			}
+
+			fetchBlock(*data, index, block, offset);
+
+		}
 
 	}
 
@@ -188,4 +263,50 @@ void accessMemory(address addr, word* data, WriteEnable we)
 	   THIS LINE SHOULD BE REMOVED.
 	*/
 	accessDRAM(addr, (byte*)data, WORD_SIZE, we);
+}
+
+void fetchBlock(word* data, int index, int block, int offset)
+{
+
+	memcpy((void*)data, (void*)cache[index].block[block].data[offset], 4);
+
+	for (int i = 0; i < assoc; i++)
+	{
+
+		cache[index].block[i].lru.value++;
+
+	}
+
+	cache[index].block[block].lru.value = 0;
+
+}
+
+void replaceDirty(int dirtyBlock, int index, int indexBits, int offsetBits)
+{
+
+	address dirty = 0;
+	unsigned int dirtyIndex = 0;
+	unsigned int dirtyTag = 0;
+
+	dirtyIndex = index << offsetBits;
+	dirtyTag = cache[index].block[dirtyBlock].tag;
+
+	dirtyTag = dirtyTag << (offsetBits + indexBits);
+
+	dirty = dirtyTag + dirtyIndex;
+
+	getDRAMBlock(dirty, (byte *)cache[index].block[dirtyBlock].data, block_size, WRITE);
+
+}
+
+void getDRAMBlock(address addr, word* data, WriteEnable we)
+{
+
+	for (int i = 0; i < block_size; i += 4)
+	{
+
+		accessDRAM(addr + i, (byte*)data + i, WORD_SIZE, we);	//if something goes wrong, maybe check the typecast
+
+	}
+
 }
