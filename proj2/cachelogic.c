@@ -151,20 +151,7 @@ void accessMemory(address addr, word* data, WriteEnable we)
 
 			if (policy == LRU) 
 			{
-				int maxValue = 0, LRUBlock = 0;
-
-				for (int i = 0; i < assoc; i++)
-				{
-
-					if (cache[index].block[i].lru.value > maxValue)
-					{
-
-						maxValue = cache[index].block[i].lru.value;
-						LRUBlock = i;
-
-					}
-					
-				}
+				int LRUBlock = findLRU(index);
 
 				if (cache[index].block[LRUBlock].dirty == DIRTY)
 				{
@@ -215,15 +202,34 @@ void accessMemory(address addr, word* data, WriteEnable we)
 
 	else
 	{
-		//do some other shit
+		
 		if (MemorySyncPolicy == WRITE_BACK)
 		{
-			//do this shit
+			
+			if (cache[index].block[LRUBlock].dirty == DIRTY)
+			{
+				int replaceBlock;
+				if (policy == LRU)
+					replaceBlock = findLRU(index);
+				else replaceBlock = randomint(assoc);
+
+				replaceDirty(replaceBlock, index, indexBits, offsetBits);
+
+			}
+			memcpy((void *)cache[index].block[replaceBlock].data, (void *)data, block_size);
+			
 		}
 
-		else
+		else //Write through
 		{
-			//do that shit
+			int replaceBlock;
+			if (policy == LRU)
+				replaceBlock = findLRU(index);
+			else replaceBlock = randomint(assoc);
+
+			memcpy((void *)cache[index].block[replaceBlock].data, (void *)data, block_size);
+
+			getDRAMBlock(addr, data, WRITE);
 		}
 	}
 
@@ -254,15 +260,24 @@ void accessMemory(address addr, word* data, WriteEnable we)
 	functions can be found in tips.h
 	*/
 
-	/* Start adding code here */
+}
 
+int findLRU(int index)
+{
+	int maxValue = 0, LRUlock = 0;
 
-	/* This call to accessDRAM occurs when you modify any of the
-	   cache parameters. It is provided as a stop gap solution.
-	   At some point, ONCE YOU HAVE MORE OF YOUR CACHELOGIC IN PLACE,
-	   THIS LINE SHOULD BE REMOVED.
-	*/
-	accessDRAM(addr, (byte*)data, WORD_SIZE, we);
+	for (int i = 0; i < assoc; i++)
+	{
+
+		if (cache[index].block[i].lru.value > maxValue)
+		{
+
+			maxValue = cache[index].block[i].lru.value;
+			LRUBlock = i;
+		}
+
+	}
+	return LRUBlock;
 }
 
 void fetchBlock(word* data, int index, int block, int offset)
